@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cohere - Student Organization Management</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <header id="app-header">
+        <button id="btn-menu-toggle" aria-label="Toggle menu">☰</button>
+        <h1 class="app-title">Cohere</h1>
+        <div class="header-controls">
+            <label for="viewing-as">Viewing as</label>
+            <select id="viewing-as">
+                <option value="admin">Administrator (demo)</option>
+            </select>
+            <small id="viewing-as-hint">Demo profile, not a login</small>
+            <button id="btn-notifications" aria-label="Notifications">
+                🔔 <span id="notif-badge" hidden>0</span>
+            </button>
+            <span id="header-date"></span>
+        </div>
+    </header>
+
+    <div class="app-shell">
+        <nav id="sidebar">
+            <button class="nav-btn" data-view="dashboard">Dashboard</button>
+            <button class="nav-btn" data-view="members">Members</button>
+            <button class="nav-btn" data-view="tasks">Tasks</button>
+            <button class="nav-btn" data-view="appointments">Meetings</button>
+            <button class="nav-btn" data-view="attendance">Attendance</button>
+            <button class="nav-btn" data-view="performance">Performance</button>
+            <button class="nav-btn" data-view="activity">Activity</button>
+            <button class="nav-btn" data-view="settings">Settings</button>
+        </nav>
+
+        <main id="main">
+            <section class="view" id="view-dashboard" hidden>
+                <h2>Dashboard</h2>
+                <div id="stat-cards"></div>
+                <div id="dash-task-status"></div>
+                <div id="dash-due-soon"></div>
+                <div id="dash-upcoming"></div>
+                <div id="dash-top-officers"></div>
+                <div id="dash-recent-activity"></div>
+                <div id="dash-my-tasks" hidden></div>
+            </section>
+
+            <section class="view" id="view-members" hidden>
+                <h2>Members</h2>
+                <div data-permission="manageMembers">
+                    <form id="org-form" novalidate>
+                        <input type="hidden" id="org-id">
+                        <label for="org-name">Organization Name</label>
+                        <input type="text" id="org-name">
+                        <label for="org-desc">Description</label>
+                        <textarea id="org-desc"></textarea>
+                        <div>
+                            <button type="submit" id="org-submit" class="btn">Add Organization</button>
+                            <button type="button" id="org-cancel" class="btn btn-secondary" hidden>Cancel</button>
+                        </div>
+                    </form>
+                    <ul id="org-list"></ul>
+                </div>
+                <p class="view-only-note" data-permission-note="manageMembers" hidden>You do not have permission to
+                    manage organizations.</p>
+
+                <div data-permission="manageMembers">
+                    <form id="member-form" novalidate>
+                        <input type="hidden" id="member-id">
+                        <label for="member-fullName">Full Name</label>
+                        <input type="text" id="member-fullName">
+                        <label for="member-studentId">Student ID</label>
+                        <input type="text" id="member-studentId">
+                        <label for="member-orgId">Organization</label>
+                        <select id="member-orgId"></select>
+                        <label for="member-position">Position</label>
+                        <select id="member-position"></select>
+                        <label for="member-yearSection">Year/Section</label>
+                        <input type="text" id="member-yearSection">
+                        <label for="member-email">Email</label>
+                        <input type="email" id="member-email">
+                        <div>
+                            <button type="submit" id="member-submit" class="btn">Add Member</button>
+                            <button type="button" id="member-cancel" class="btn btn-secondary" hidden>Cancel</button>
+                        </div>
+                    </form>
+                </div>
+                <p class="view-only-note" data-permission-note="manageMembers" hidden>You do not have permission to
+                    manage members.</p>
+
+                <div class="toolbar">
+                    <input type="search" id="member-search" placeholder="Search members...">
+                    <select id="member-filter-org"></select>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Student ID</th>
+                                <th>Organization</th>
+                                <th>Position</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="member-table-body"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="view" id="view-tasks" hidden>
+                <h2>Tasks</h2>
+                <div data-permission="manageTasks">
+                    <form id="task-form" novalidate>
+                        <input type="hidden" id="task-id">
+                        <label for="task-title">Title</label>
+                        <input type="text" id="task-title">
+                        <label for="task-description">Description</label>
+                        <textarea id="task-description"></textarea>
+                        <label for="task-assigneeId">Assignee</label>
+                        <select id="task-assigneeId"></select>
+                        <label for="task-priority">Priority</label>
+                        <select id="task-priority"></select>
+                        <label for="task-deadline">Deadline</label>
+                        <input type="date" id="task-deadline">
+                        <label for="task-status">Status</label>
+                        <select id="task-status"></select>
+                        <div id="task-completed-wrap" hidden>
+                            <label for="task-completedAt">Completed Date</label>
+                            <input type="date" id="task-completedAt">
+                        </div>
+                        <div>
+                            <button type="submit" id="task-submit" class="btn">Add Task</button>
+                            <button type="button" id="task-cancel" class="btn btn-secondary" hidden>Cancel</button>
+                        </div>
+                    </form>
+                </div>
+                <p class="view-only-note" data-permission-note="manageTasks" hidden>You do not have permission to manage
+                    tasks.</p>
+
+                <div class="toolbar">
+                    <input type="search" id="task-search" placeholder="Search tasks...">
+                    <select id="task-filter-status"></select>
+                    <select id="task-filter-priority"></select>
+                    <select id="task-filter-assignee"></select>
+                    <select id="task-sort"></select>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Assignee</th>
+                                <th>Priority</th>
+                                <th>Deadline</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="task-list"></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="view" id="view-appointments" hidden>
+                <h2>Meetings</h2>
+                <div data-permission="manageMeetings">
+                    <form id="appt-form" novalidate>
+                        <input type="hidden" id="appt-id">
+                        <label for="appt-title">Title</label>
+                        <input type="text" id="appt-title">
+                        <label for="appt-date">Date</label>
+                        <input type="date" id="appt-date">
+                        <label for="appt-start">Start Time</label>
+                        <input type="time" id="appt-start">
+                        <label for="appt-end">End Time</label>
+                        <input type="time" id="appt-end">
+                        <label for="appt-location">Location</label>
+                        <input type="text" id="appt-location">
+                        <label for="appt-notes">Notes</label>
+                        <textarea id="appt-notes"></textarea>
+                        <fieldset>
+                            <legend>Invite Officers</legend>
+                            <div id="appt-members"></div>
+                        </fieldset>
+                        <div id="appt-conflict-box" class="conflict-box" hidden></div>
+                        <div>
+                            <button type="submit" id="appt-submit" class="btn">Schedule Meeting</button>
+                            <button type="button" id="appt-cancel" class="btn btn-secondary" hidden>Cancel</button>
+                        </div>
+                    </form>
+                </div>
+                <p class="view-only-note" data-permission-note="manageMeetings" hidden>You do not have permission to
+                    manage meetings.</p>
+
+                <div class="toolbar">
+                    <input type="search" id="appt-search" placeholder="Search meetings...">
+                    <select id="appt-filter-status"></select>
+                </div>
+                <div id="appt-list"></div>
+            </section>
+
+            <section class="view" id="view-attendance" hidden>
+                <h2>Attendance</h2>
+                <div class="toolbar">
+                    <label for="attendance-select">Select Meeting</label>
+                    <select id="attendance-select"></select>
+                </div>
+                <div id="attendance-summary"></div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Officer</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body"></tbody>
+                    </table>
+                </div>
+                <div data-permission="markAttendance">
+                    <button id="btn-mark-all-present" class="btn">Mark All Present</button>
+                    <button id="btn-clear-attendance" class="btn btn-danger">Clear Attendance</button>
+                </div>
+                <p class="view-only-note" data-permission-note="markAttendance" hidden>You do not have permission to
+                    mark attendance.</p>
+                <div id="attendance-rates"></div>
+            </section>
+
+            <section class="view" id="view-performance" hidden>
+                <h2>Performance</h2>
+                <div class="toolbar">
+                    <select id="perf-org-filter"></select>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th data-sort="name">Name</th>
+                                <th data-sort="taskCompletionRate">Task Completion</th>
+                                <th data-sort="onTimeRate">On-Time</th>
+                                <th data-sort="attendanceRate">Attendance</th>
+                                <th data-sort="overallScore">Overall</th>
+                            </tr>
+                        </thead>
+                        <tbody id="perf-table-body"></tbody>
+                    </table>
+                </div>
+                <div id="perf-detail"></div>
+            </section>
+
+            <section class="view" id="view-activity" hidden>
+                <h2>Activity Log</h2>
+                <div class="toolbar">
+                    <input type="search" id="activity-search" placeholder="Search activity...">
+                    <select id="activity-type-filter"></select>
+                    <button id="btn-clear-activity" class="btn btn-danger" data-permission="manageData">Clear
+                        Log</button>
+                </div>
+                <ul id="activity-list"></ul>
+            </section>
+
+            <section class="view" id="view-settings" hidden>
+                <h2>Settings</h2>
+                <div data-permission="manageData">
+                    <button id="btn-load-sample" class="btn">Load Sample Data</button>
+                    <button id="btn-reset-data" class="btn btn-danger">Reset All Data</button>
+                    <label for="input-import">Import Backup</label>
+                    <input type="file" id="input-import" accept=".json">
+                </div>
+                <p class="view-only-note" data-permission-note="manageData" hidden>You do not have permission to manage
+                    data.</p>
+                <button id="btn-export" class="btn btn-secondary">Export Data</button>
+
+                <!-- Temporary button for M0 done check, will be removed in M1 -->
+                <button id="btn-test-toast" class="btn" type="button"
+                    style="margin-top: 16px; background: var(--color-warning);">Test Toast (M0 Only)</button>
+
+                <div id="settings-info"></div>
+            </section>
+        </main>
+    </div>
+
+    <div id="notif-panel" hidden>
+        <h3>Notifications</h3>
+        <button id="btn-mark-all-read" class="btn btn-secondary">Mark all read</button>
+        <ul id="notif-list"></ul>
+    </div>
+
+    <div id="toast-container" aria-live="polite"></div>
+
+    <div id="modal-overlay" hidden>
+        <div id="modal" role="dialog" aria-modal="true">
+            <h2 id="modal-title"></h2>
+            <div id="modal-body"></div>
+            <button id="modal-close" class="btn btn-secondary">Close</button>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/permissions.js"></script>
+    <script src="js/seed.js"></script>
+    <script src="js/store.js"></script>
+    <script src="js/validators.js"></script>
+    <script src="js/activity.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/views/members.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
