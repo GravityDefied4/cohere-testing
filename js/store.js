@@ -18,6 +18,11 @@ Cohere.Store = (function () {
         return m ? m.fullName : "Unknown officer";
     }
 
+    // Returns a task by ID
+    function getTask(id) {
+        return window.Cohere.state.tasks.find(function (t) { return t.id === id; }) || null;
+    }
+
     // Adds a new organization
     function addOrg(values) {
         if (!Cohere.Permissions.can("manageMembers")) {
@@ -151,12 +156,106 @@ Cohere.Store = (function () {
         if (Cohere.Permissions.getViewingAs() === id) {
             Cohere.Permissions.setViewingAs("admin");
         }
-
+        
         Cohere.Storage.saveAll();
         Cohere.Activity.log("member", "Deleted member \"" + member.fullName + "\"" + (memberTasks.length > 0 ? " and " + memberTasks.length + " task(s)" : ""));
 
         return { ok: true, data: member };
     }
 
-    return { getOrg, getMember, getMemberName, addOrg, updateOrg, deleteOrg, addMember, updateMember, deleteMember };
+    // Adds a new task
+    function addTask(values) {
+        if (!Cohere.Permissions.can("manageTasks")) {
+            return { ok: false, error: Cohere.Permissions.denyMessage("manageTasks") };
+        }
+
+        const task = {
+            id: Cohere.Utils.generateId("task"),
+            title: values.title.trim(),
+            description: (values.description || "").trim(),
+            assigneeId: values.assigneeId,
+            priority: values.priority,
+            deadline: values.deadline,
+            status: values.status,
+            createdAt: Cohere.Utils.todayISO(),
+            completedAt: values.status === "Completed" ? values.completedAt : null
+        };
+
+        window.Cohere.state.tasks.push(task);
+        Cohere.Storage.saveAll();
+        Cohere.Activity.log("task", "Created task \"" + task.title + "\" assigned to " + getMemberName(task.assigneeId));
+        Cohere.Notify.add("task", "You have been assigned a new task: \"" + task.title + "\"", task.assigneeId, task.id);
+
+        return { ok: true, data: task };
+    }
+
+    // Updates an existing task
+    function updateTask(id, values) {
+        if (!Cohere.Permissions.can("manageTasks")) {
+            return { ok: false, error: Cohere.Permissions.denyMessage("manageTasks") };
+        }
+
+        const task = getTask(id);
+        if (!task) return { ok: false, error: "Task not found." };
+
+        const oldAssignee = task.assigneeId;
+
+        task.title = values.title.trim();
+        task.description = (values.description || "").trim();
+        task.assigneeId = values.assigneeId;
+        task.priority = values.priority;
+        task.deadline = values.deadline;
+        task.status = values.status;
+        task.completedAt = values.status === "Completed" ? values.completedAt : null;
+
+        Cohere.Storage.saveAll();
+        Cohere.Activity.log("task", "Updated task \"" + task.title + "\"");
+
+        if (oldAssignee !== task.assigneeId) {
+            Cohere.Notify.add("task", "You have been assigned task: \"" + task.title + "\"", task.assigneeId, task.id);
+        }
+
+        return { ok: true, data: task };
+    }
+
+    // Deletes a task
+    function deleteTask(id) {
+        if (!Cohere.Permissions.can("manageTasks")) {
+            return { ok: false, error: Cohere.Permissions.denyMessage("manageTasks") };
+        }
+
+        const task = getTask(id);
+        if (!task) return { ok: false, error: "Task not found." };
+
+        window.Cohere.state.tasks = window.Cohere.state.tasks.filter(function (t) { return t.id !== id; });
+        Cohere.Storage.saveAll();
+        Cohere.Activity.log("task", "Deleted task \"" + task.title + "\"");
+
+        return { ok: true, data: task };
+    }
+
+    // Sets a task's status (used for quick complete/reopen, checks canUpdateTask)
+    function setTaskStatus(taskId, status, completedAt) {
+        const task = getTask(taskId);
+        if (!task) return { ok: false, error: "Task not found." };
+
+        if (!Cohere.Permissions.canUpdateTask(task)) {
+            return { ok: false, error: Cohere.Permissions.denyMessage("manageTasks") };
+        }
+
+        task.status = status;
+        task.completedAt = status === "Completed" ? (completedAt || Cohere.Utils.todayISO()) : null;
+
+        Cohere.Storage.saveAll();
+        Cohere.Activity.log("task", (status === "Completed" ? "Completed" : "Reopened") + " task \"" + task.title + "\"");
+
+        return { ok: true, data: task };
+    }
+
+    return {
+        getOrg, getMember, getMemberName, getTask,
+        addOrg, updateOrg, deleteOrg,
+        addMember, updateMember, deleteMember,
+        addTask, updateTask, deleteTask, setTaskStatus
+    };
 })();
